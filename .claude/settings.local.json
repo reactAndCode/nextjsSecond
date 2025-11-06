@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(npx shadcn@latest add:*)",
+      "Bash(npm run dev:*)",
+      "Bash(npx kill-port:*)",
+      "Bash(mkdir:*)",
+      "Bash(rm:*)",
+      "WebSearch"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
