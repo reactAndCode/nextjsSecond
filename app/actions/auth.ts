@@ -15,7 +15,7 @@ export async function login(formData: FormData) {
   const { error } = await supabase.auth.signInWithPassword(data)
 
   if (error) {
-    return { error: error.message }
+    redirect(`/login?error=${encodeURIComponent(error.message)}`)
   }
 
   revalidatePath('/', 'layout')
@@ -33,11 +33,11 @@ export async function signup(formData: FormData) {
   const { error } = await supabase.auth.signUp(data)
 
   if (error) {
-    return { error: error.message }
+    redirect(`/signup?error=${encodeURIComponent(error.message)}`)
   }
 
   revalidatePath('/', 'layout')
-  redirect('/login')
+  redirect('/login?message=${encodeURIComponent("회원가입이 완료되었습니다. 로그인해주세요.")}')
 }
 
 export async function logout() {
@@ -46,7 +46,7 @@ export async function logout() {
   const { error } = await supabase.auth.signOut()
 
   if (error) {
-    return { error: error.message }
+    redirect(`/?error=${encodeURIComponent(error.message)}`)
   }
 
   revalidatePath('/', 'layout')
