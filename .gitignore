@@ -39,3 +39,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# project documentation
+CLAUDE.md
+SUPABASE_SETUP.md
+SUPABASE_STORAGE_SETUP.md
+SUPABASE_TABLE_SETUP.md
