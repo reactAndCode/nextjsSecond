@@ -124,7 +124,7 @@ export function WorkoutsList({ workouts, error }: WorkoutsListProps) {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
             <Dumbbell className="h-8 w-8 text-primary" />
@@ -142,18 +142,18 @@ export function WorkoutsList({ workouts, error }: WorkoutsListProps) {
             className="flex-1 sm:flex-none"
           >
             <Plus className="h-5 w-5 mr-2" />
-            5개 일괄입력
+            5개입력
           </Button>
           <Button asChild size="lg" variant="outline" className="flex-1 sm:flex-none">
             <Link href="/workouts/new-batch">
               <Plus className="h-5 w-5 mr-2" />
-              여러 개 추가
+              여러개
             </Link>
           </Button>
           <Button asChild size="lg" className="shadow-lg flex-1 sm:flex-none">
             <Link href="/workouts/new">
               <Plus className="h-5 w-5 mr-2" />
-              운동 기록 추가
+              한개
             </Link>
           </Button>
         </div>
@@ -161,11 +161,11 @@ export function WorkoutsList({ workouts, error }: WorkoutsListProps) {
 
       {/* 빠른 입력 폼 */}
       {showQuickInput && (
-        <Card className="mb-8 border-2 border-primary/50 shadow-lg">
-          <CardHeader className="pb-4">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-              <CardTitle className="text-xl flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-primary" />
+        <Card className="mb-4 border border-primary/50 shadow-lg">
+          <CardHeader className="pb-2 pt-3">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-primary" />
                 빠른 입력
               </CardTitle>
               <div className="flex items-center gap-2 flex-1">
@@ -188,15 +188,15 @@ export function WorkoutsList({ workouts, error }: WorkoutsListProps) {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="overflow-x-auto">
-              <Table>
+            <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+              <Table className="min-w-[600px]">
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="min-w-[150px]">운동명</TableHead>
-                    <TableHead className="min-w-[100px]">중량</TableHead>
-                    <TableHead className="min-w-[80px]">횟수</TableHead>
-                    <TableHead className="min-w-[80px]">세트</TableHead>
-                    <TableHead className="min-w-[120px]">부위</TableHead>
+                    <TableHead className="w-[150px]">운동명</TableHead>
+                    <TableHead className="w-[100px]">중량</TableHead>
+                    <TableHead className="w-[80px]">횟수</TableHead>
+                    <TableHead className="w-[80px]">세트</TableHead>
+                    <TableHead className="w-[120px]">부위</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -247,7 +247,7 @@ export function WorkoutsList({ workouts, error }: WorkoutsListProps) {
                 </TableBody>
               </Table>
             </div>
-            <div className="flex gap-2 mt-6 justify-end">
+            <div className="flex gap-2 mt-4 justify-end">
               <Button
                 variant="outline"
                 onClick={handleQuickCancel}
@@ -269,7 +269,7 @@ export function WorkoutsList({ workouts, error }: WorkoutsListProps) {
       )}
 
       {error && (
-        <div className="bg-destructive/10 text-destructive px-4 py-3 rounded-lg mb-6">
+        <div className="bg-destructive/10 text-destructive px-4 py-3 rounded-lg mb-4">
           오류: {error}
         </div>
       )}
@@ -288,7 +288,7 @@ export function WorkoutsList({ workouts, error }: WorkoutsListProps) {
             <Button asChild size="lg" variant="outline">
               <Link href="/workouts/new-batch">
                 <Plus className="h-5 w-5 mr-2" />
-                여러 개 추가
+                여러개
               </Link>
             </Button>
             <Button asChild size="lg">
@@ -301,7 +301,7 @@ export function WorkoutsList({ workouts, error }: WorkoutsListProps) {
         </div>
       ) : (
         /* 탭 컨텐츠 */
-        <Tabs defaultValue="list" className="space-y-6">
+        <Tabs defaultValue="list" className="space-y-3">
           <TabsList className="grid w-full max-w-md grid-cols-2">
             <TabsTrigger value="list" className="flex items-center gap-2">
               <List className="h-4 w-4" />
@@ -314,13 +314,13 @@ export function WorkoutsList({ workouts, error }: WorkoutsListProps) {
           </TabsList>
 
           {/* 리스트형 표시 */}
-          <TabsContent value="list" className="space-y-4">
+          <TabsContent value="list" className="space-y-2">
             {currentDateWorkouts && (
               <>
                 {/* 날짜 네비게이션 */}
-                <Card className="border-2">
-                  <CardContent className="pt-6">
-                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                <Card className="border">
+                  <CardContent className="py-2">
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
                       <Button
                         variant="outline"
                         size="sm"
@@ -332,8 +332,8 @@ export function WorkoutsList({ workouts, error }: WorkoutsListProps) {
                         이전 날짜
                       </Button>
 
-                      <div className="flex items-center gap-2 font-semibold text-lg">
-                        <Calendar className="h-5 w-5 text-primary" />
+                      <div className="flex items-center gap-2 font-semibold text-base">
+                        <Calendar className="h-4 w-4 text-primary" />
                         <span className="text-center sm:text-left">
                           {new Date(currentDateWorkouts[0]).toLocaleDateString('ko-KR', {
                             year: 'numeric',
@@ -342,7 +342,7 @@ export function WorkoutsList({ workouts, error }: WorkoutsListProps) {
                             weekday: 'long'
                           })}
                         </span>
-                        <span className="text-sm text-muted-foreground font-normal">
+                        <span className="text-xs text-muted-foreground font-normal">
                           ({currentDateWorkouts[1].length}개)
                         </span>
                       </div>
@@ -362,8 +362,8 @@ export function WorkoutsList({ workouts, error }: WorkoutsListProps) {
                 </Card>
 
                 {/* 테이블 */}
-                <Card className="border-2 overflow-hidden">
-                  <CardContent className="pt-6 overflow-x-auto">
+                <Card className="border overflow-hidden">
+                  <CardContent className="p-0 overflow-x-auto">
                     <Table>
                       <TableHeader>
                         <TableRow>
@@ -426,37 +426,37 @@ export function WorkoutsList({ workouts, error }: WorkoutsListProps) {
           </TabsContent>
 
           {/* 카드형 표시 */}
-          <TabsContent value="cards" className="space-y-8">
+          <TabsContent value="cards" className="space-y-4">
             {groupedWorkouts.map(([date, dayWorkouts]) => (
-              <div key={date} className="space-y-4">
-                <div className="flex items-center gap-2 text-lg font-semibold">
-                  <Calendar className="h-5 w-5 text-primary" />
+              <div key={date} className="space-y-3">
+                <div className="flex items-center gap-2 text-base font-semibold">
+                  <Calendar className="h-4 w-4 text-primary" />
                   {new Date(date).toLocaleDateString('ko-KR', {
                     year: 'numeric',
                     month: 'long',
                     day: 'numeric',
                     weekday: 'long'
                   })}
-                  <span className="text-sm text-muted-foreground font-normal ml-2">
-                    ({dayWorkouts.length}개 운동)
+                  <span className="text-xs text-muted-foreground font-normal ml-2">
+                    ({dayWorkouts.length}개)
                   </span>
                 </div>
 
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
                   {dayWorkouts.map((workout) => (
                     <Card
                       key={workout.id}
-                      className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-2 hover:border-primary/50"
+                      className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border hover:border-primary/50"
                     >
-                      <CardHeader className="pb-3">
-                        <CardTitle className="text-xl flex items-center gap-2">
-                          <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-white font-bold">
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-lg flex items-center gap-2">
+                          <div className="h-9 w-9 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-white font-bold text-sm">
                             {workout.exercise_name.charAt(0).toUpperCase()}
                           </div>
                           <span className="line-clamp-1">{workout.exercise_name}</span>
                         </CardTitle>
                       </CardHeader>
-                      <CardContent className="space-y-4">
+                      <CardContent className="space-y-3">
                         {/* 운동 부위 */}
                         {workout.body_part && (
                           <div className="flex items-center gap-2 text-sm bg-primary/5 p-2 rounded-lg">
