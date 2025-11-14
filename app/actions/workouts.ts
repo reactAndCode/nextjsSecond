@@ -155,3 +155,57 @@ export async function deleteWorkout(id: string) {
   revalidatePath('/workouts')
   return { error: null, success: true }
 }
+
+export async function createWorkoutsBatch(workouts: Array<{
+  exercise_name: string
+  workout_date: string
+  body_part?: string
+  weight?: string
+  reps?: string
+  sets?: string
+}>) {
+  const supabase = await createClient()
+
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) {
+    return { error: '로그인이 필요합니다.', success: false }
+  }
+
+  // 빈 운동명 필터링
+  const validWorkouts = workouts.filter(w => w.exercise_name.trim() !== '')
+
+  if (validWorkouts.length === 0) {
+    return { error: '최소 1개 이상의 운동을 입력해주세요.', success: false }
+  }
+
+  const workoutsData = validWorkouts.map(workout => ({
+    user_id: user.id,
+    exercise_name: workout.exercise_name,
+    workout_date: workout.workout_date,
+    body_part: workout.body_part || null,
+    weight: workout.weight || null,
+    reps: workout.reps || null,
+    sets: workout.sets || null,
+    duration: null,
+    intensity: null,
+    condition: null,
+    next_goal: null,
+    notes: null,
+    photo_url_1: null,
+    photo_url_2: null,
+  }))
+
+  const { data, error } = await supabase
+    .from('workouts')
+    .insert(workoutsData)
+    .select()
+
+  if (error) {
+    console.error('Batch workout creation error:', error)
+    return { error: error.message, success: false }
+  }
+
+  revalidatePath('/workouts')
+  return { error: null, success: true, count: data.length }
+}

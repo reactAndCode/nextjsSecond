@@ -28,36 +28,29 @@ export async function Header() {
                 className="text-sm font-medium transition-colors hover:text-primary flex items-center gap-1"
               >
                 <Utensils className="h-4 w-4" />
-                식사관리
+                식사
               </Link>
               <Link
                 href="/workouts"
                 className="text-sm font-medium transition-colors hover:text-primary flex items-center gap-1"
               >
                 <Dumbbell className="h-4 w-4" />
-                나의운동내역
+                운동
+              </Link>
+              <Link
+                href="/properties"
+                className="text-sm font-medium transition-colors hover:text-primary flex items-center gap-1"
+              >
+                <Building2 className="h-4 w-4" />
+                부동산
               </Link>
             </>
           )}
-          <Link
-            href="/properties"
-            className="text-sm font-medium transition-colors hover:text-primary"
-          >
-            부동산정보
-          </Link>
           {isLoggedIn ? (
-            <>
-              <Link
-                href="/properties/new"
-                className="text-sm font-medium transition-colors hover:text-primary"
-              >
-                부동산 등록
-              </Link>
-              <div className="flex items-center space-x-2">
-                <span className="text-sm text-muted-foreground">{user.email}</span>
-                <LogoutButton />
-              </div>
-            </>
+            <div className="flex items-center space-x-2">
+              <span className="text-sm text-muted-foreground">{user.email?.substring(0, 5)}...</span>
+              <LogoutButton />
+            </div>
           ) : (
             <>
               <Link

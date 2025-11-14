@@ -1,15 +1,18 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useTransition } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Input } from "@/components/ui/input"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Dumbbell, Plus, Calendar, Weight, Hash, Layers, Clock, MapPin, LayoutGrid, List, ChevronLeft, ChevronRight } from "lucide-react"
+import { Dumbbell, Plus, Calendar, Weight, Hash, Layers, Clock, MapPin, LayoutGrid, List, ChevronLeft, ChevronRight, X, Save } from "lucide-react"
 import Image from "next/image"
 import { Workout } from "@/types/workout"
+import { createWorkoutsBatch } from "@/app/actions/workouts"
+import { toast } from "sonner"
 
 type WorkoutsListProps = {
   workouts: Workout[]
@@ -18,7 +21,73 @@ type WorkoutsListProps = {
 
 export function WorkoutsList({ workouts, error }: WorkoutsListProps) {
   const router = useRouter()
+  const [isPending, startTransition] = useTransition()
   const [currentDateIndex, setCurrentDateIndex] = useState(0)
+  const [showQuickInput, setShowQuickInput] = useState(false)
+
+  // 오늘 날짜 (YYYY-MM-DD)
+  const today = new Date().toISOString().split('T')[0]
+
+  // 빠른 입력 날짜 상태
+  const [quickInputDate, setQuickInputDate] = useState(today)
+
+  // 5개 운동 입력 상태
+  const [quickWorkouts, setQuickWorkouts] = useState([
+    { exercise_name: '', weight: '', reps: '', sets: '', body_part: '' },
+    { exercise_name: '', weight: '', reps: '', sets: '', body_part: '' },
+    { exercise_name: '', weight: '', reps: '', sets: '', body_part: '' },
+    { exercise_name: '', weight: '', reps: '', sets: '', body_part: '' },
+    { exercise_name: '', weight: '', reps: '', sets: '', body_part: '' },
+  ])
+
+  // 입력값 변경 핸들러
+  const handleQuickInputChange = (index: number, field: string, value: string) => {
+    const newWorkouts = [...quickWorkouts]
+    newWorkouts[index] = { ...newWorkouts[index], [field]: value }
+    setQuickWorkouts(newWorkouts)
+  }
+
+  // 빠른 입력 저장
+  const handleQuickSave = () => {
+    startTransition(async () => {
+      const workoutsToSave = quickWorkouts.map(w => ({
+        ...w,
+        workout_date: quickInputDate
+      }))
+
+      const result = await createWorkoutsBatch(workoutsToSave)
+
+      if (result.error) {
+        toast.error(result.error)
+      } else {
+        toast.success(`${result.count}개의 운동이 저장되었습니다!`)
+        // 초기화
+        setQuickWorkouts([
+          { exercise_name: '', weight: '', reps: '', sets: '', body_part: '' },
+          { exercise_name: '', weight: '', reps: '', sets: '', body_part: '' },
+          { exercise_name: '', weight: '', reps: '', sets: '', body_part: '' },
+          { exercise_name: '', weight: '', reps: '', sets: '', body_part: '' },
+          { exercise_name: '', weight: '', reps: '', sets: '', body_part: '' },
+        ])
+        setQuickInputDate(today)
+        setShowQuickInput(false)
+        router.refresh()
+      }
+    })
+  }
+
+  // 빠른 입력 취소
+  const handleQuickCancel = () => {
+    setQuickWorkouts([
+      { exercise_name: '', weight: '', reps: '', sets: '', body_part: '' },
+      { exercise_name: '', weight: '', reps: '', sets: '', body_part: '' },
+      { exercise_name: '', weight: '', reps: '', sets: '', body_part: '' },
+      { exercise_name: '', weight: '', reps: '', sets: '', body_part: '' },
+      { exercise_name: '', weight: '', reps: '', sets: '', body_part: '' },
+    ])
+    setQuickInputDate(today)
+    setShowQuickInput(false)
+  }
 
   // 날짜별로 그룹화 (최신순)
   const groupedWorkouts = useMemo(() => {
@@ -66,6 +135,15 @@ export function WorkoutsList({ workouts, error }: WorkoutsListProps) {
           </p>
         </div>
         <div className="flex gap-2 w-full sm:w-auto">
+          <Button
+            onClick={() => setShowQuickInput(!showQuickInput)}
+            size="lg"
+            variant={showQuickInput ? "secondary" : "outline"}
+            className="flex-1 sm:flex-none"
+          >
+            <Plus className="h-5 w-5 mr-2" />
+            5개 일괄입력
+          </Button>
           <Button asChild size="lg" variant="outline" className="flex-1 sm:flex-none">
             <Link href="/workouts/new-batch">
               <Plus className="h-5 w-5 mr-2" />
@@ -80,6 +158,115 @@ export function WorkoutsList({ workouts, error }: WorkoutsListProps) {
           </Button>
         </div>
       </div>
+
+      {/* 빠른 입력 폼 */}
+      {showQuickInput && (
+        <Card className="mb-8 border-2 border-primary/50 shadow-lg">
+          <CardHeader className="pb-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+              <CardTitle className="text-xl flex items-center gap-2">
+                <Calendar className="h-5 w-5 text-primary" />
+                빠른 입력
+              </CardTitle>
+              <div className="flex items-center gap-2 flex-1">
+                <label className="text-sm font-medium whitespace-nowrap">운동 날짜:</label>
+                <Input
+                  type="date"
+                  value={quickInputDate}
+                  onChange={(e) => setQuickInputDate(e.target.value)}
+                  disabled={isPending}
+                  className="max-w-[200px]"
+                />
+                <span className="text-sm text-muted-foreground">
+                  ({new Date(quickInputDate).toLocaleDateString('ko-KR', {
+                    month: 'long',
+                    day: 'numeric',
+                    weekday: 'short'
+                  })})
+                </span>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="min-w-[150px]">운동명</TableHead>
+                    <TableHead className="min-w-[100px]">중량</TableHead>
+                    <TableHead className="min-w-[80px]">횟수</TableHead>
+                    <TableHead className="min-w-[80px]">세트</TableHead>
+                    <TableHead className="min-w-[120px]">부위</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {quickWorkouts.map((workout, index) => (
+                    <TableRow key={index}>
+                      <TableCell>
+                        <Input
+                          value={workout.exercise_name}
+                          onChange={(e) => handleQuickInputChange(index, 'exercise_name', e.target.value)}
+                          placeholder="예: 벤치프레스"
+                          disabled={isPending}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          value={workout.weight}
+                          onChange={(e) => handleQuickInputChange(index, 'weight', e.target.value)}
+                          placeholder="예: 80kg"
+                          disabled={isPending}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          value={workout.reps}
+                          onChange={(e) => handleQuickInputChange(index, 'reps', e.target.value)}
+                          placeholder="예: 10"
+                          disabled={isPending}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          value={workout.sets}
+                          onChange={(e) => handleQuickInputChange(index, 'sets', e.target.value)}
+                          placeholder="예: 3"
+                          disabled={isPending}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          value={workout.body_part}
+                          onChange={(e) => handleQuickInputChange(index, 'body_part', e.target.value)}
+                          placeholder="예: 가슴"
+                          disabled={isPending}
+                        />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+            <div className="flex gap-2 mt-6 justify-end">
+              <Button
+                variant="outline"
+                onClick={handleQuickCancel}
+                disabled={isPending}
+              >
+                <X className="h-4 w-4 mr-2" />
+                취소
+              </Button>
+              <Button
+                onClick={handleQuickSave}
+                disabled={isPending}
+              >
+                <Save className="h-4 w-4 mr-2" />
+                {isPending ? '저장 중...' : '저장'}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {error && (
         <div className="bg-destructive/10 text-destructive px-4 py-3 rounded-lg mb-6">
@@ -184,7 +371,6 @@ export function WorkoutsList({ workouts, error }: WorkoutsListProps) {
                           <TableHead className="min-w-[100px]">중량</TableHead>
                           <TableHead className="min-w-[80px]">횟수</TableHead>
                           <TableHead className="min-w-[80px]">세트</TableHead>
-                          <TableHead className="min-w-[100px]">시간</TableHead>
                           <TableHead className="min-w-[120px]">운동 부위</TableHead>
                           <TableHead className="text-right min-w-[80px]">상세</TableHead>
                         </TableRow>
@@ -207,7 +393,6 @@ export function WorkoutsList({ workouts, error }: WorkoutsListProps) {
                             <TableCell>{workout.weight || '-'}</TableCell>
                             <TableCell>{workout.reps || '-'}</TableCell>
                             <TableCell>{workout.sets || '-'}</TableCell>
-                            <TableCell>{workout.duration || '-'}</TableCell>
                             <TableCell>
                               {workout.body_part ? (
                                 <span className="inline-flex items-center gap-1 text-sm bg-primary/10 px-2 py-1 rounded whitespace-nowrap">
@@ -301,13 +486,6 @@ export function WorkoutsList({ workouts, error }: WorkoutsListProps) {
                               <Layers className="h-4 w-4 text-muted-foreground mb-1" />
                               <span className="text-xs text-muted-foreground">세트</span>
                               <span className="font-semibold text-sm">{workout.sets}</span>
-                            </div>
-                          )}
-                          {workout.duration && (
-                            <div className="flex flex-col items-center p-2 bg-muted/50 rounded-lg">
-                              <Clock className="h-4 w-4 text-muted-foreground mb-1" />
-                              <span className="text-xs text-muted-foreground">시간</span>
-                              <span className="font-semibold text-sm">{workout.duration}</span>
                             </div>
                           )}
                         </div>

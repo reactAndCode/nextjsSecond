@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Menu, X, Dumbbell, Utensils } from "lucide-react"
+import { Menu, X, Dumbbell, Utensils, Building2, LogIn, UserPlus } from "lucide-react"
 import { useState } from "react"
 import { LogoutButton } from "./LogoutButton"
 
@@ -30,57 +30,52 @@ export function MobileMenu({ isLoggedIn }: MobileMenuProps) {
 
       {/* 모바일 네비게이션 */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-t absolute top-16 left-0 right-0 bg-background">
-          <nav className="container mx-auto flex flex-col space-y-4 px-4 py-4">
+        <div className="md:hidden border-t absolute top-16 left-0 right-0 bg-background shadow-lg">
+          <nav className="container mx-auto flex flex-col space-y-3 px-4 py-4">
             {isLoggedIn && (
               <>
                 <Link
                   href="/meals"
-                  className="text-sm font-medium transition-colors hover:text-primary flex items-center gap-1"
+                  className="text-sm font-medium transition-colors hover:text-primary flex items-center gap-2 p-2 rounded-lg hover:bg-muted"
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  <Utensils className="h-4 w-4" />
-                  식사관리
+                  <Utensils className="h-5 w-5" />
+                  식사
                 </Link>
                 <Link
                   href="/workouts"
-                  className="text-sm font-medium transition-colors hover:text-primary flex items-center gap-1"
+                  className="text-sm font-medium transition-colors hover:text-primary flex items-center gap-2 p-2 rounded-lg hover:bg-muted"
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  <Dumbbell className="h-4 w-4" />
-                  나의운동내역
+                  <Dumbbell className="h-5 w-5" />
+                  운동
                 </Link>
+                <Link
+                  href="/properties"
+                  className="text-sm font-medium transition-colors hover:text-primary flex items-center gap-2 p-2 rounded-lg hover:bg-muted"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <Building2 className="h-5 w-5" />
+                  부동산
+                </Link>
+                <div className="pt-2 border-t">
+                  <LogoutButton />
+                </div>
               </>
             )}
-            <Link
-              href="/properties"
-              className="text-sm font-medium transition-colors hover:text-primary"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              부동산정보
-            </Link>
-            {isLoggedIn ? (
-              <>
-                <Link
-                  href="/properties/new"
-                  className="text-sm font-medium transition-colors hover:text-primary"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  부동산 등록
-                </Link>
-                <LogoutButton />
-              </>
-            ) : (
+            {!isLoggedIn && (
               <>
                 <Link
                   href="/login"
-                  className="text-sm font-medium transition-colors hover:text-primary"
+                  className="text-sm font-medium transition-colors hover:text-primary flex items-center gap-2 p-2 rounded-lg hover:bg-muted"
                   onClick={() => setMobileMenuOpen(false)}
                 >
+                  <LogIn className="h-5 w-5" />
                   로그인
                 </Link>
                 <Button asChild className="w-full">
-                  <Link href="/signup" onClick={() => setMobileMenuOpen(false)}>
+                  <Link href="/signup" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2">
+                    <UserPlus className="h-5 w-5" />
                     회원가입
                   </Link>
                 </Button>
