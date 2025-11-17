@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useTransition } from "react"
+import { useState, useMemo, useTransition, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -11,7 +11,7 @@ import { useRouter } from "next/navigation"
 import { Dumbbell, Plus, Calendar, Weight, Hash, Layers, Clock, MapPin, LayoutGrid, List, ChevronLeft, ChevronRight, X, Save } from "lucide-react"
 import Image from "next/image"
 import { Workout } from "@/types/workout"
-import { createWorkoutsBatch } from "@/app/actions/workouts"
+import { createWorkoutsBatch, getLastWeekWorkouts } from "@/app/actions/workouts"
 import { toast } from "sonner"
 
 type WorkoutsListProps = {
@@ -39,6 +39,39 @@ export function WorkoutsList({ workouts, error }: WorkoutsListProps) {
     { exercise_name: '', weight: '', reps: '', sets: '', body_part: '' },
     { exercise_name: '', weight: '', reps: '', sets: '', body_part: '' },
   ])
+
+  // 5개입력 버튼 클릭 시 지난주 운동 불러오기
+  useEffect(() => {
+    if (showQuickInput) {
+      loadLastWeekWorkouts()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showQuickInput])
+
+  const loadLastWeekWorkouts = async () => {
+    const result = await getLastWeekWorkouts()
+
+    if (result.error || !result.data || result.data.length === 0) {
+      return
+    }
+
+    // 지난주 운동으로 채우기 (최대 5개)
+    const newQuickWorkouts = [...quickWorkouts]
+    result.data.forEach((workout, index) => {
+      if (index < 5) {
+        newQuickWorkouts[index] = {
+          exercise_name: workout.exercise_name,
+          weight: workout.weight,
+          reps: workout.reps,
+          sets: workout.sets,
+          body_part: workout.body_part,
+        }
+      }
+    })
+
+    setQuickWorkouts(newQuickWorkouts)
+    toast.success(`지난주 운동 ${result.data.length}개를 불러왔습니다 (횟수 +10% 💪)`)
+  }
 
   // 입력값 변경 핸들러
   const handleQuickInputChange = (index: number, field: string, value: string) => {

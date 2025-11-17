@@ -1,8 +1,8 @@
 "use client"
 
-import { useState, useTransition, useRef } from "react"
+import { useState, useTransition, useRef, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { createWorkout } from "@/app/actions/workouts"
+import { createWorkout, getSuggestedReps } from "@/app/actions/workouts"
 import { uploadPropertyImage } from "@/app/actions/upload"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -30,7 +30,30 @@ export function WorkoutForm() {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false)
   const [formData, setFormData] = useState<FormData | null>(null)
   const [imageFiles, setImageFiles] = useState<File[]>([])
+  const [exerciseName, setExerciseName] = useState("")
+  const [suggestedReps, setSuggestedReps] = useState("")
   const dateInputRef = useRef<HTMLInputElement>(null)
+  const repsInputRef = useRef<HTMLInputElement>(null)
+
+  // 운동명 입력 시 추천 횟수 가져오기
+  useEffect(() => {
+    if (!exerciseName || exerciseName.trim().length < 2) {
+      setSuggestedReps("")
+      return
+    }
+
+    const timer = setTimeout(async () => {
+      const result = await getSuggestedReps(exerciseName.trim())
+      if (result.suggestedReps) {
+        setSuggestedReps(result.suggestedReps)
+        if (repsInputRef.current && !repsInputRef.current.value) {
+          repsInputRef.current.value = result.suggestedReps
+        }
+      }
+    }, 500) // 500ms debounce
+
+    return () => clearTimeout(timer)
+  }, [exerciseName])
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -132,6 +155,8 @@ export function WorkoutForm() {
                     id="exercise_name"
                     name="exercise_name"
                     placeholder="예: 벤치프레스, 스쿼트, 데드리프트"
+                    value={exerciseName}
+                    onChange={(e) => setExerciseName(e.target.value)}
                     required
                     disabled={isPending}
                     className="h-11"
@@ -221,12 +246,18 @@ export function WorkoutForm() {
                 <div className="space-y-2">
                   <Label htmlFor="reps">횟수</Label>
                   <Input
+                    ref={repsInputRef}
                     id="reps"
                     name="reps"
-                    placeholder="예: 10회, 8-12회"
+                    placeholder={suggestedReps ? `추천: ${suggestedReps}회 (지난주 대비 +10%)` : "예: 10회, 8-12회"}
                     disabled={isPending}
                     className="h-11"
                   />
+                  {suggestedReps && (
+                    <p className="text-xs text-green-600 dark:text-green-400">
+                      💪 지난주보다 10% 증가된 횟수입니다
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="sets">세트수</Label>

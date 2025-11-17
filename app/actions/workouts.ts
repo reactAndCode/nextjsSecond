@@ -156,6 +156,143 @@ export async function deleteWorkout(id: string) {
   return { error: null, success: true }
 }
 
+export async function getSuggestedReps(exerciseName: string) {
+  const supabase = await createClient()
+
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) {
+    return { suggestedReps: null }
+  }
+
+  // 오늘 날짜 기준 지난주 날짜 계산
+  const today = new Date()
+  const lastWeek = new Date(today)
+  lastWeek.setDate(today.getDate() - 7)
+  const lastWeekDate = lastWeek.toISOString().split('T')[0]
+
+  // 1. 먼저 지난주 같은 운동 찾기
+  const { data: lastWeekWorkout } = await supabase
+    .from('workouts')
+    .select('reps')
+    .eq('user_id', user.id)
+    .eq('exercise_name', exerciseName)
+    .lte('workout_date', lastWeekDate)
+    .order('workout_date', { ascending: false })
+    .limit(1)
+    .single()
+
+  if (lastWeekWorkout?.reps) {
+    const repsValue = parseInt(lastWeekWorkout.reps.replace(/[^0-9]/g, '')) || 0
+    if (repsValue > 0) {
+      const suggested = Math.ceil(repsValue * 1.1)
+      return { suggestedReps: suggested.toString() }
+    }
+  }
+
+  // 2. 지난주 기록이 없으면 최근 5개 평균
+  const { data: recentWorkouts } = await supabase
+    .from('workouts')
+    .select('reps')
+    .eq('user_id', user.id)
+    .eq('exercise_name', exerciseName)
+    .order('workout_date', { ascending: false })
+    .order('created_at', { ascending: false })
+    .limit(5)
+
+  if (recentWorkouts && recentWorkouts.length > 0) {
+    const validReps = recentWorkouts
+      .map(w => parseInt(w.reps?.replace(/[^0-9]/g, '') || '0'))
+      .filter(r => r > 0)
+
+    if (validReps.length > 0) {
+      const average = validReps.reduce((sum, r) => sum + r, 0) / validReps.length
+      const suggested = Math.ceil(average * 1.1)
+      return { suggestedReps: suggested.toString() }
+    }
+  }
+
+  return { suggestedReps: null }
+}
+
+export async function getLastWeekWorkouts() {
+  const supabase = await createClient()
+
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) {
+    return { data: null, error: '로그인이 필요합니다.' }
+  }
+
+  // 오늘 기준 지난주 같은 요일 날짜 계산 (정확히 7일 전)
+  const today = new Date()
+  const lastWeekSameDay = new Date(today)
+  lastWeekSameDay.setDate(today.getDate() - 7)
+  const lastWeekDate = lastWeekSameDay.toISOString().split('T')[0]
+
+  console.log('오늘:', today.toISOString().split('T')[0])
+  console.log('지난주 같은 요일:', lastWeekDate)
+
+  // 지난주 같은 요일의 운동 기록 가져오기 (없으면 최근 5개)
+  let { data: lastWeekWorkouts, error } = await supabase
+    .from('workouts')
+    .select('exercise_name, body_part, weight, reps, sets, workout_date')
+    .eq('user_id', user.id)
+    .eq('workout_date', lastWeekDate)
+
+  console.log('지난주 같은 요일 운동:', lastWeekWorkouts)
+
+  // 지난주 같은 요일에 운동이 없으면 최근 5개 가져오기
+  if (!lastWeekWorkouts || lastWeekWorkouts.length === 0) {
+    console.log('지난주 같은 요일 운동 없음, 최근 5개 조회')
+    const { data: recentWorkouts, error: recentError } = await supabase
+      .from('workouts')
+      .select('exercise_name, body_part, weight, reps, sets, workout_date')
+      .eq('user_id', user.id)
+      .order('workout_date', { ascending: false })
+      .order('created_at', { ascending: false })
+      .limit(5)
+
+    if (recentError) {
+      console.error('Error fetching recent workouts:', recentError)
+      return { data: null, error: recentError.message }
+    }
+
+    lastWeekWorkouts = recentWorkouts
+    console.log('최근 5개 운동:', lastWeekWorkouts)
+  }
+
+  if (error) {
+    console.error('Error fetching last week workouts:', error)
+    return { data: null, error: error.message }
+  }
+
+  // 횟수를 10% 증가시킴
+  const workoutsWithIncreasedReps = lastWeekWorkouts.map(workout => {
+    let increasedReps = workout.reps
+
+    if (workout.reps) {
+      const repsValue = parseInt(workout.reps.replace(/[^0-9]/g, '')) || 0
+      if (repsValue > 0) {
+        const newReps = Math.ceil(repsValue * 1.1)
+        // 원본 형식 유지 (예: "10회" -> "11회")
+        increasedReps = workout.reps.replace(/\d+/, newReps.toString())
+      }
+    }
+
+    return {
+      exercise_name: workout.exercise_name,
+      body_part: workout.body_part || '',
+      weight: workout.weight || '',
+      reps: increasedReps || '',
+      sets: workout.sets || '',
+    }
+  })
+
+  console.log('10% 증가된 운동:', workoutsWithIncreasedReps)
+  return { data: workoutsWithIncreasedReps, error: null }
+}
+
 export async function createWorkoutsBatch(workouts: Array<{
   exercise_name: string
   workout_date: string

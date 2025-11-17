@@ -1,8 +1,8 @@
 "use client"
 
-import { useState, useTransition, useRef } from "react"
+import { useState, useTransition, useRef, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { createWorkout } from "@/app/actions/workouts"
+import { createWorkout, getLastWeekWorkouts } from "@/app/actions/workouts"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -18,7 +18,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import Link from "next/link"
-import { Loader2, Dumbbell, Plus, X, Calendar } from "lucide-react"
+import { Loader2, Dumbbell, Plus, X, Calendar, RefreshCw } from "lucide-react"
 import { toast } from "sonner"
 
 type WorkoutInput = {
@@ -36,6 +36,7 @@ export function MultiWorkoutForm() {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [showConfirmDialog, setShowConfirmDialog] = useState(false)
+  const [isLoadingLastWeek, setIsLoadingLastWeek] = useState(true)
   const [workouts, setWorkouts] = useState<WorkoutInput[]>([
     {
       id: '1',
@@ -49,6 +50,54 @@ export function MultiWorkoutForm() {
     }
   ])
   const dateInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({})
+
+  // 페이지 로드 시 자동으로 지난주 운동 불러오기
+  useEffect(() => {
+    loadLastWeekWorkouts()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const loadLastWeekWorkouts = async () => {
+    console.log('=== loadLastWeekWorkouts 시작 ===')
+    setIsLoadingLastWeek(true)
+    try {
+      const result = await getLastWeekWorkouts()
+      console.log('getLastWeekWorkouts 결과:', result)
+
+      if (result.error) {
+        console.error('Error loading workouts:', result.error)
+        setIsLoadingLastWeek(false)
+        return
+      }
+
+      if (!result.data || result.data.length === 0) {
+        console.log('지난주 운동 없음')
+        setIsLoadingLastWeek(false)
+        return
+      }
+
+      const today = new Date().toISOString().split('T')[0]
+      const newWorkouts = result.data.map((workout, index) => ({
+        id: String(index + 1),
+        exercise_name: workout.exercise_name,
+        workout_date: today,
+        body_part: workout.body_part,
+        weight: workout.weight,
+        reps: workout.reps,
+        sets: workout.sets,
+        duration: '',
+      }))
+
+      console.log('newWorkouts:', newWorkouts)
+      setWorkouts(newWorkouts)
+      console.log('setWorkouts 완료')
+    } catch (error) {
+      console.error('Error loading last week workouts:', error)
+    } finally {
+      setIsLoadingLastWeek(false)
+      console.log('=== loadLastWeekWorkouts 완료 ===')
+    }
+  }
 
   const addWorkout = () => {
     if (workouts.length >= 5) {
@@ -146,18 +195,50 @@ export function MultiWorkoutForm() {
             <CardContent className="pt-6">
               <div className="flex items-start gap-3">
                 <Dumbbell className="h-5 w-5 text-primary mt-0.5" />
-                <div>
+                <div className="flex-1">
                   <p className="font-semibold mb-1">한 번에 여러 운동 등록</p>
-                  <p className="text-sm text-muted-foreground">
-                    최대 5개까지 운동을 추가하여 한 번에 등록할 수 있습니다.
+                  <p className="text-sm text-muted-foreground mb-3">
+                    지난주 운동이 자동으로 불러와집니다 (횟수 +10% 💪)
                   </p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={loadLastWeekWorkouts}
+                    disabled={isPending || isLoadingLastWeek}
+                    className="border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950 hover:bg-green-100 dark:hover:bg-green-900"
+                  >
+                    {isLoadingLastWeek ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        불러오는 중...
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw className="h-4 w-4 mr-2" />
+                        다시 불러오기
+                      </>
+                    )}
+                  </Button>
                 </div>
               </div>
             </CardContent>
           </Card>
 
+          {/* 로딩 중 표시 */}
+          {isLoadingLastWeek && workouts.length === 1 && !workouts[0].exercise_name && (
+            <Card className="border-2">
+              <CardContent className="pt-6 pb-6">
+                <div className="flex items-center justify-center gap-3 text-muted-foreground">
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  <p>지난주 운동을 불러오는 중...</p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* 운동 입력 카드들 */}
-          {workouts.map((workout, index) => (
+          {!isLoadingLastWeek && workouts.map((workout, index) => (
             <Card key={workout.id} className="border-2 relative">
               <CardHeader className="bg-gradient-to-r from-primary/10 to-transparent">
                 <div className="flex items-center justify-between">
@@ -302,7 +383,7 @@ export function MultiWorkoutForm() {
           ))}
 
           {/* 운동 추가 버튼 */}
-          {workouts.length < 5 && (
+          {!isLoadingLastWeek && workouts.length < 5 && (
             <Button
               type="button"
               variant="outline"
@@ -316,21 +397,23 @@ export function MultiWorkoutForm() {
           )}
 
           {/* 제출 버튼 */}
-          <div className="flex justify-end gap-4 sticky bottom-4 bg-background/80 backdrop-blur-sm p-4 rounded-lg border-2 shadow-lg">
-            <Button type="button" variant="outline" asChild disabled={isPending} size="lg">
-              <Link href="/workouts">취소</Link>
-            </Button>
-            <Button type="submit" disabled={isPending} size="lg" className="min-w-32">
-              {isPending ? (
-                <>
-                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                  등록 중...
-                </>
-              ) : (
-                `${workouts.length}개 운동 등록`
-              )}
-            </Button>
-          </div>
+          {!isLoadingLastWeek && (
+            <div className="flex justify-end gap-4 sticky bottom-4 bg-background/80 backdrop-blur-sm p-4 rounded-lg border-2 shadow-lg">
+              <Button type="button" variant="outline" asChild disabled={isPending} size="lg">
+                <Link href="/workouts">취소</Link>
+              </Button>
+              <Button type="submit" disabled={isPending} size="lg" className="min-w-32">
+                {isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                    등록 중...
+                  </>
+                ) : (
+                  `${workouts.length}개 운동 등록`
+                )}
+              </Button>
+            </div>
+          )}
         </div>
       </form>
 
